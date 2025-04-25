@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Nave Esquivadora</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+
+        canvas {
+            display: block;
+            background: #000;
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="gameCanvas"></canvas>
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+        canvas.width = 600;
+        canvas.height = 400;
+
+        // Nave
+        const ship = {
+            x: canvas.width / 2,
+            y: canvas.height - 30,
+            width: 20,
+            height: 20,
+            speed: 5,
+            color: "#00F"
+        };
+
+        // Obstáculos
+        let obstacles = [];
+        let score = 0;
+        let gameOver = false;
+
+        // Controles
+        document.addEventListener("keydown", (e) => {
+            if (e.key === "ArrowLeft" && ship.x > 0) ship.x -= ship.speed;
+            if (e.key === "ArrowRight" && ship.x < canvas.width - ship.width) ship.x += ship.speed;
+        });
+
+        // Generar obstáculos
+        function spawnObstacle() {
+            const width = Math.random() * 50 + 20;
+            obstacles.push({
+                x: Math.random() * (canvas.width - width),
+                y: 0,
+                width: width,
+                height: 20,
+                speed: Math.random() * 3 + 2
+            });
+        }
+
+        // Dibujar
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Nave
+            ctx.fillStyle = ship.color;
+            ctx.fillRect(ship.x, ship.y, ship.width, ship.height);
+
+            // Obstáculos
+            ctx.fillStyle = "#F00";
+            obstacles.forEach(obs => {
+                ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
+                obs.y += obs.speed;
+
+                // Colisión
+                if (
+                    ship.x < obs.x + obs.width &&
+                    ship.x + ship.width > obs.x &&
+                    ship.y < obs.y + obs.height &&
+                    ship.y + ship.height > obs.y
+                ) {
+                    gameOver = true;
+                }
+
+                // Eliminar obstáculos fuera de pantalla
+                if (obs.y > canvas.height) {
+                    obstacles = obstacles.filter(o => o !== obs);
+                    score++;
+                }
+            });
+
+            // Puntuación
+            ctx.fillStyle = "#FFF";
+            ctx.font = "20px Arial";
+            ctx.fillText(`Puntos: ${score}`, 10, 30);
+
+            // Dificultad progresiva
+            if (score % 5 === 0 && obstacles.length < score / 5) {
+                spawnObstacle();
+            }
+
+            // Game Over
+            if (gameOver) {
+                ctx.fillStyle = "#FFF";
+                ctx.font = "40px Arial";
+                ctx.fillText("¡Game Over!", canvas.width / 2 - 100, canvas.height / 2);
+            } else {
+                requestAnimationFrame(draw);
+            }
+        }
+
+        // Iniciar juego
+        spawnObstacle();
+        draw();
+    </script>
+</body>
+
+</html>
