@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Nave Esquivadora</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: #000;
+            color: #FFF;
+            font-family: Arial;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        #overlay {
+            position: absolute;
+            text-align: center;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 20px;
+            border-radius: 10px;
+        }
+
+        #gameCanvas {
+            display: none;
+            background: #000;
+        }
+
+        button {
+            margin-top: 10px;
+            padding: 10px 20px;
+            font-size: 18px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="overlay">
+        <h1>Nave Esquivadora</h1>
+        <button onclick="startGame()">Iniciar Juego</button>
+    </div>
+    <canvas id="gameCanvas" width="600" height="400"></canvas>
+
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+        const overlay = document.getElementById("overlay");
+
+        // Nave
+        const ship = {
+            x: canvas.width / 2 - 10,
+            y: canvas.height - 30,
+            width: 20,
+            height: 20,
+            speed: 5,
+            color: "#00F"
+        };
+
+        let obstacles = [];
+        let score = 0;
+        let gameOver = false;
+        let maxObstacles = 1;
+        let animationId;
+
+        document.addEventListener("keydown", (e) => {
+            if (e.key === "ArrowLeft" && ship.x > 0) ship.x -= ship.speed;
+            if (e.key === "ArrowRight" && ship.x < canvas.width - ship.width) ship.x += ship.speed;
+        });
+
+        function spawnObstacle() {
+            const width = Math.random() * 50 + 20;
+            obstacles.push({
+                x: Math.random() * (canvas.width - width),
+                y: 0,
+                width: width,
+                height: 20,
+                speed: Math.random() * 3 + 2
+            });
+        }
+
+        function resetGame() {
+            ship.x = canvas.width / 2 - 10;
+            score = 0;
+            obstacles = [];
+            gameOver = false;
+            maxObstacles = 1;
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Nave
+            ctx.fillStyle = ship.color;
+            ctx.fillRect(ship.x, ship.y, ship.width, ship.height);
+
+            // Obstáculos
+            ctx.fillStyle = "#F00";
+            obstacles.forEach(obs => {
+                ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
+                obs.y += obs.speed;
+
+                if (
+                    ship.x < obs.x + obs.width &&
+                    ship.x + ship.width > obs.x &&
+                    ship.y < obs.y + obs.height &&
+                    ship.y + ship.height > obs.y
+                ) {
+                    gameOver = true;
+                }
+            });
+
+            // Remover obstáculos que salieron
+            obstacles = obstacles.filter(obs => {
+                if (obs.y > canvas.height) {
+                    score++;
+                    if (score % 5 === 0) {
+                        maxObstacles++;
+                    }
+                    return false;
+                }
+                return true;
+            });
+
+            // Spawn nuevos obstáculos
+            if (obstacles.length < maxObstacles) {
+                spawnObstacle();
+            }
+
+            // Puntuación
+            ctx.fillStyle = "#FFF";
+            ctx.font = "20px Arial";
+            ctx.fillText(`Puntos: ${score}`, 10, 30);
+
+            if (gameOver) {
+                cancelAnimationFrame(animationId);
+                showGameOver();
+            } else {
+                animationId = requestAnimationFrame(draw);
+            }
+        }
+
+        function startGame() {
+            overlay.style.display = "none";
+            canvas.style.display = "block";
+            resetGame();
+            draw();
+        }
+
+        function showGameOver() {
+            overlay.innerHTML = `
+                <h1>¡Game Over!</h1>
+                <p>Puntos: ${score}</p>
+                <button onclick="startGame()">Reiniciar</button>
+            `;
+            overlay.style.display = "block";
+            canvas.style.display = "none";
+        }
+    </script>
+</body>
+
+</html>
